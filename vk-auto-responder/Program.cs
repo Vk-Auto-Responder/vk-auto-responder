@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading;
+using Newtonsoft.Json;
 using VkNet;
 using VkNet.Model;
 using VkNet.Model.RequestParams;
@@ -20,7 +23,10 @@ namespace VkAutoResponder
 
         private const string Token = "21cd2cdc7610c2b80b481aa56ed60dd9c815cab2f1232dea703abf91a8d81294a257dec745c37f0106fd9";
 
-        static void Message(string message, long chatId)
+        private static readonly HashSet<long> VisitedIds = new();
+        private const string VisitedIdsFileName = "visitedids.txt";
+
+        private static void Message(string message, long chatId)
         {
             try
             {
@@ -37,7 +43,7 @@ namespace VkAutoResponder
             }
         }
 
-        static void Reply(string message, long chatId, long replyingMessageId)
+        private static void Reply(string message, long chatId, long replyingMessageId)
         {
             try
             {
@@ -55,7 +61,31 @@ namespace VkAutoResponder
             }
         }
 
-        static void Main(string[] args)
+        private static void LoadVisitedIds()
+        {
+            if (!File.Exists(VisitedIdsFileName))
+            {
+                Console.WriteLine($"{VisitedIdsFileName} file not found.");
+                return;
+            }
+
+            var visitedJson = File.ReadAllText(VisitedIdsFileName);
+            var visitedIds = JsonConvert.DeserializeObject<ICollection<long>>(visitedJson);
+            foreach (var visitedId in visitedIds)
+            {
+                VisitedIds.Add(visitedId);
+            }
+        }
+
+        private static bool NoticeMessageId(long id)
+        {
+            if (!VisitedIds.Add(id)) return false;
+
+            File.WriteAllText(VisitedIdsFileName, JsonConvert.SerializeObject(VisitedIds.ToArray()));
+            return true;
+        }
+
+        private static void Main(string[] args)
         {
             // Console.Write("ID Беседы: "); chatId = Convert.ToInt64(Console.ReadLine());
             // Console.Write("ID Вашей страницы: "); UserId = Convert.ToInt64(Console.ReadLine());
@@ -67,8 +97,10 @@ namespace VkAutoResponder
             });
 
             Console.WriteLine("Authorized");
+            
+            LoadVisitedIds();
 
-            HashSet<long> visitedIds = new();
+            Console.WriteLine("Loaded VisitedIds");
 
             while (true)
             {
@@ -86,21 +118,21 @@ namespace VkAutoResponder
                 {
                     if (message.Id is not null)
                     {
-                        if (!visitedIds.Add(message.Id.Value))
+                        if (!NoticeMessageId(message.Id.Value))
                         {
                             continue;
                         }
-                    }
 
-                    Console.WriteLine(message.Text);
-                    // if (message.FromId == UserId) continue;
+                        Console.WriteLine(message.Text);
+                        // if (message.FromId == UserId) continue;
 
-                    string messageString = message.Text;
-                    messageString = messageString.Replace(" ", String.Empty).Replace(".", String.Empty).Replace("\\n", String.Empty).Replace("\n", String.Empty).Replace("#", String.Empty).Replace("'", String.Empty);
+                        string messageString = message.Text;
+                        messageString = messageString.Replace(" ", String.Empty).Replace(".", String.Empty).Replace("\\n", String.Empty).Replace("\n", String.Empty).Replace("#", String.Empty).Replace("'", String.Empty);
 
-                    if (messageString.Contains("Test"))
-                    {
-                        Reply("OK", ChatId, message.Id!.Value);
+                        if (messageString.Contains("Egop"))
+                        {
+                            Reply("Красавчик", ChatId, message.Id.Value);
+                        }
                     }
                 }
 
