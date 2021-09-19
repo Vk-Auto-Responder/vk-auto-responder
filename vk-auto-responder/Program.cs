@@ -8,27 +8,25 @@ using VkNet.Utils;
 
 namespace VkAutoResponder
 {
-    class Program
+    public static class Program
     {
-        static readonly VkApi api = new();
+        private static readonly VkApi API = new();
 
-        static Random random = new();
+        private static readonly Random Random = new();
 
-        static System.Collections.ObjectModel.Collection<Message> messages;
+        private const long ChatId = 2000000002;
 
-        static long confId = 2000000002;
+        private const long UserId = 386787504;
 
-        static long adminId = 386787504;
-
-        static string token = "21cd2cdc7610c2b80b481aa56ed60dd9c815cab2f1232dea703abf91a8d81294a257dec745c37f0106fd9";
+        private const string Token = "21cd2cdc7610c2b80b481aa56ed60dd9c815cab2f1232dea703abf91a8d81294a257dec745c37f0106fd9";
 
         static void Message(string message, long chatId)
         {
             try
             {
-                api.Messages.Send(new MessagesSendParams
+                API.Messages.Send(new MessagesSendParams
                 {
-                    RandomId = random.Next(0, 1000000000),
+                    RandomId = Random.Next(0, 1000000000),
                     PeerId = chatId,
                     Message = message,
                 });
@@ -43,9 +41,9 @@ namespace VkAutoResponder
         {
             try
             {
-                api.Messages.Send(new MessagesSendParams
+                API.Messages.Send(new MessagesSendParams
                 {
-                    RandomId = random.Next(0, 1000000000),
+                    RandomId = Random.Next(0, 1000000000),
                     PeerId = chatId,
                     Message = message,
                     ReplyTo = replyingMessageId
@@ -59,15 +57,13 @@ namespace VkAutoResponder
 
         static void Main(string[] args)
         {
-            // Console.Write("ID Беседы: "); confId = Convert.ToInt64(Console.ReadLine());
-            // Console.Write("ID Вашей страницы: "); adminId = Convert.ToInt64(Console.ReadLine());
+            // Console.Write("ID Беседы: "); chatId = Convert.ToInt64(Console.ReadLine());
+            // Console.Write("ID Вашей страницы: "); UserId = Convert.ToInt64(Console.ReadLine());
             // Console.Write("Токен: "); token = Console.ReadLine();
 
-            return;
-            
-            api.Authorize(new ApiAuthParams
+            API.Authorize(new ApiAuthParams
             {
-                AccessToken = token
+                AccessToken = Token
             });
 
             Console.WriteLine("Authorized");
@@ -76,12 +72,13 @@ namespace VkAutoResponder
 
             while (true)
             {
-                var history = api.Messages.GetHistory(new MessagesGetHistoryParams
+                var history = API.Messages.GetHistory(new MessagesGetHistoryParams
                 {
-                    UserId = confId,
+                    UserId = ChatId,
                     Count = 20
                 });
-                messages = history.Messages.ToCollection();
+
+                var messages = history.Messages.ToCollection();
 
                 Console.WriteLine($"Loaded {messages.Count} messages");
 
@@ -96,14 +93,14 @@ namespace VkAutoResponder
                     }
 
                     Console.WriteLine(message.Text);
-                    // if (message.FromId == adminId) continue;
+                    // if (message.FromId == UserId) continue;
 
                     string messageString = message.Text;
                     messageString = messageString.Replace(" ", String.Empty).Replace(".", String.Empty).Replace("\\n", String.Empty).Replace("\n", String.Empty).Replace("#", String.Empty).Replace("'", String.Empty);
 
                     if (messageString.Contains("Test"))
                     {
-                        Reply("OK", confId, message.Id!.Value);
+                        Reply("OK", ChatId, message.Id!.Value);
                     }
                 }
 
