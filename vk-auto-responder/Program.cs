@@ -81,7 +81,7 @@ namespace VkAutoResponder
         {
             if (!VisitedIds.Add(id)) return false;
 
-            File.WriteAllText(VisitedIdsFileName, JsonConvert.SerializeObject(VisitedIds.ToArray()));
+            File.WriteAllText(VisitedIdsFileName, JsonConvert.SerializeObject(VisitedIds.ToArray(), Formatting.Indented));
             return true;
         }
 
@@ -97,7 +97,7 @@ namespace VkAutoResponder
             });
 
             Console.WriteLine("Authorized");
-            
+
             LoadVisitedIds();
 
             Console.WriteLine("Loaded VisitedIds");
@@ -110,29 +110,28 @@ namespace VkAutoResponder
                     Count = 20
                 });
 
-                var messages = history.Messages.ToCollection();
+                var messages = history.Messages;
 
-                Console.WriteLine($"Loaded {messages.Count} messages");
+                Console.WriteLine($"Loaded {history.TotalCount} messages");
 
                 foreach (var message in messages)
                 {
-                    if (message.Id is not null)
+                    if (message.Id is null) continue;
+                    
+                    if (!NoticeMessageId(message.Id.Value))
                     {
-                        if (!NoticeMessageId(message.Id.Value))
-                        {
-                            continue;
-                        }
+                        continue;
+                    }
 
-                        Console.WriteLine(message.Text);
-                        // if (message.FromId == UserId) continue;
+                    Console.WriteLine(message.Text);
+                    // if (message.FromId == UserId) continue;
 
-                        string messageString = message.Text;
-                        messageString = messageString.Replace(" ", String.Empty).Replace(".", String.Empty).Replace("\\n", String.Empty).Replace("\n", String.Empty).Replace("#", String.Empty).Replace("'", String.Empty);
+                    string messageString = message.Text;
+                    messageString = messageString.Replace(" ", String.Empty).Replace(".", String.Empty).Replace("\\n", String.Empty).Replace("\n", String.Empty).Replace("#", String.Empty).Replace("'", String.Empty);
 
-                        if (messageString.Contains("Egop"))
-                        {
-                            Reply("Красавчик", ChatId, message.Id.Value);
-                        }
+                    if (messageString.Contains("Egop"))
+                    {
+                        Reply("Красавчик", ChatId, message.Id.Value);
                     }
                 }
 
