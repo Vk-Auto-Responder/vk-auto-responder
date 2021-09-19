@@ -19,9 +19,10 @@ namespace VkAutoResponder
 
         private static readonly long[] ChatIds =
         {
-            // 2000000000 + 2, 
-            2000000000 + 59,
-            2000000000 + 81
+            // 2000000000 + 2, // Family 
+            // 2000000000 + 59, // семёрка
+            // 2000000000 + 81, // комплекс общежитий №3
+            2000000000 + 58, // 702БЛ
         };
 
         private const long ChatId = 2000000002;
@@ -33,7 +34,34 @@ namespace VkAutoResponder
         private static readonly HashSet<long> VisitedIds = new();
         private const string VisitedIdsFileName = "visitedids.txt";
 
-        private static readonly string[] Keywords = {"печать", "распечатать", "скан", "печатает",};
+        private static readonly string[] BannedToAllKeywords =
+        {
+            "1108",
+            "1108м"
+        };
+
+        private static readonly string[] Keywords =
+        {
+            "1108",
+            "1108м",
+            "копию",
+            "копия",
+            "напечатать",
+            "откопировать",
+            "отксерит",
+            "отксерить",
+            "отсканить",
+            "печатает",
+            "печатаете",
+            "печать",
+            "пидор",
+            "принтер",
+            "распечатать",
+            "секс",
+            "скан",
+            "сканер",
+            "скопировать",
+        };
 
         private static void Message(string message, long chatId)
         {
@@ -118,7 +146,7 @@ namespace VkAutoResponder
                     var history = API.Messages.GetHistory(new MessagesGetHistoryParams
                     {
                         UserId = chatId,
-                        Count = 20
+                        Count = 5
                     });
 
                     var messages = history.Messages.ToCollection();
@@ -134,10 +162,25 @@ namespace VkAutoResponder
                             continue;
                         }
 
-                        Console.WriteLine($"New Message {message.Id} - {message.Text}");
-                        if (message.FromId == UserId) continue;
+                        if (message.FromId == UserId)
+                        {
+                            Console.WriteLine($"Message from self, skipping! - {message.Text}");
+                            continue;
+                        }
 
-                        var words = message.Text
+                        string text;
+                        if (message.ForwardedMessages.Count == 0)
+                        {
+                            text = message.Text;
+                            Console.WriteLine($"New Message {message.Id} - {text}");
+                        }
+                        else
+                        {
+                            text = message.ForwardedMessages[0].Text;
+                            Console.WriteLine($"New Forwarded Message In {message.Id} - {text}");
+                        }
+
+                        var words = text
                             .Replace(".", " ")
                             .Replace("\\n", " ")
                             .Replace("\n", " ")
@@ -148,11 +191,19 @@ namespace VkAutoResponder
                             .Replace("/", " ")
                             .Replace("-", " ")
                             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                            .Select(w => w.ToLower());
+                            .Select(w => w.ToLower())
+                            .ToCollection();
 
-                        if (words.Any(word => Keywords.Any(kw => kw == word)))
+                        var index = -1;
+                        if (words.Any(word => (index = Array.IndexOf(BannedToAllKeywords, word)) != -1))
                         {
-                            Reply("702БЛ\nПечать (чб и цветная) - 4р/лист\nСкан - 2р/лист", ChatId, message.Id.Value);
+                            Console.WriteLine($"Banned keyword detected - {BannedToAllKeywords[index]}");
+                            // Reply("@all", chatId, message.Id.Value);
+                        }
+                        if (words.Any(word => (index = Array.IndexOf(Keywords, word)) != -1))
+                        {
+                            Console.WriteLine($"Keyword detected - {Keywords[index]}");
+                            Reply("702БЛ\nПечать (чб и цветная) - 4р/лист\nСкан - 2р/лист", chatId, message.Id.Value);
                         }
                     }
 
