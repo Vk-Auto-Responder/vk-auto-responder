@@ -17,6 +17,13 @@ namespace VkAutoResponder
 
         private static readonly Random Random = new();
 
+        private static readonly long[] ChatIds =
+        {
+            // 2000000000 + 2, 
+            2000000000 + 59,
+            2000000000 + 81
+        };
+
         private const long ChatId = 2000000002;
 
         private const long UserId = 386787504;
@@ -25,8 +32,8 @@ namespace VkAutoResponder
 
         private static readonly HashSet<long> VisitedIds = new();
         private const string VisitedIdsFileName = "visitedids.txt";
-        
-        private static readonly string[] Keywords = {"печать", "распечатать", "скан", "печатает", };
+
+        private static readonly string[] Keywords = {"печать", "распечатать", "скан", "печатает",};
 
         private static void Message(string message, long chatId)
         {
@@ -104,47 +111,50 @@ namespace VkAutoResponder
 
             Console.WriteLine("Loaded VisitedIds");
 
-            while (Console.ReadKey(true).Key != ConsoleKey.Q)
+            do
             {
-                var history = API.Messages.GetHistory(new MessagesGetHistoryParams
+                foreach (var chatId in ChatIds)
                 {
-                    UserId = ChatId,
-                    Count = 20
-                });
-
-                var messages = history.Messages.ToCollection();
-
-                Console.WriteLine($"Loaded {messages.Count} messages");
-
-                foreach (var message in messages)
-                {
-                    if (message.Id is null) continue;
-
-                    if (!NoticeMessageId(message.Id.Value))
+                    var history = API.Messages.GetHistory(new MessagesGetHistoryParams
                     {
-                        continue;
+                        UserId = chatId,
+                        Count = 20
+                    });
+
+                    var messages = history.Messages.ToCollection();
+
+                    Console.WriteLine($"Loaded {messages.Count} messages in {chatId} chat");
+
+                    foreach (var message in messages)
+                    {
+                        if (message.Id is null) continue;
+
+                        if (!NoticeMessageId(message.Id.Value))
+                        {
+                            continue;
+                        }
+
+                        Console.WriteLine(message.Text);
+                        if (message.FromId == UserId) continue;
+
+                        var words = message.Text
+                            .Replace(".", " ")
+                            .Replace("\\n", " ")
+                            .Replace("\n", " ")
+                            .Replace("#", " ")
+                            .Replace("'", " ")
+                            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(w => w.ToLower());
+
+                        if (words.Any(word => Keywords.Any(kw => kw == word)))
+                        {
+                            Reply("702БЛ\nПечать (чб и цветная) - 4р/лист\nСкан - 2р/лист", ChatId, message.Id.Value);
+                        }
                     }
 
-                    Console.WriteLine(message.Text);
-                    if (message.FromId == UserId) continue;
-
-                    var words = message.Text
-                        .Replace(".", " ")
-                        .Replace("\\n", " ")
-                        .Replace("\n", " ")
-                        .Replace("#", " ")
-                        .Replace("'", " ")
-                        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                        .Select(w => w.ToLower());
-
-                    if (words.Any(word => Keywords.Any(kw => kw == word)))
-                    {
-                        Reply("702БЛ\nПечать (чб и цветная) - 4р/лист\nСкан - 2р/лист", ChatId, message.Id.Value);
-                    }
+                    Thread.Sleep(2000);
                 }
-
-                Thread.Sleep(4000);
-            }
+            } while (!(Console.KeyAvailable && Console.ReadKey(true).Key == ConsoleKey.Q));
         }
     }
 }
