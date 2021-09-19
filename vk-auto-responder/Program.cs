@@ -1,22 +1,18 @@
-﻿using System.Threading;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using VkNet;
-using VkNet.Enums.Filters;
-using VkNet.Enums.SafetyEnums;
 using VkNet.Model;
 using VkNet.Model.RequestParams;
 using VkNet.Utils;
-using VkNet.Model.Keyboard;
 
-namespace VK_BOT_INSPECTOR
+namespace VkAutoResponder
 {
     class Program
     {
-        static List<string> swearing = new List<string>();
-        static readonly VkApi api = new VkApi();
+        static readonly VkApi api = new();
 
-        static Random rnd = new Random();
+        static Random random = new();
 
         static System.Collections.ObjectModel.Collection<Message> messages;
 
@@ -32,7 +28,7 @@ namespace VK_BOT_INSPECTOR
             {
                 api.Messages.Send(new MessagesSendParams
                 {
-                    RandomId = rnd.Next(0, 1000000000),
+                    RandomId = random.Next(0, 1000000000),
                     PeerId = chatId,
                     Message = message,
                 });
@@ -49,7 +45,7 @@ namespace VK_BOT_INSPECTOR
             {
                 api.Messages.Send(new MessagesSendParams
                 {
-                    RandomId = rnd.Next(0, 1000000000),
+                    RandomId = random.Next(0, 1000000000),
                     PeerId = chatId,
                     Message = message,
                     ReplyTo = replyingMessageId
@@ -67,6 +63,8 @@ namespace VK_BOT_INSPECTOR
             // Console.Write("ID Вашей страницы: "); adminId = Convert.ToInt64(Console.ReadLine());
             // Console.Write("Токен: "); token = Console.ReadLine();
 
+            return;
+            
             api.Authorize(new ApiAuthParams
             {
                 AccessToken = token
@@ -76,7 +74,6 @@ namespace VK_BOT_INSPECTOR
 
             HashSet<long> visitedIds = new();
 
-            int reload = 0;
             while (true)
             {
                 var history = api.Messages.GetHistory(new MessagesGetHistoryParams
