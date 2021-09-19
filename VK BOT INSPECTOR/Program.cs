@@ -20,21 +20,39 @@ namespace VK_BOT_INSPECTOR
 
         static System.Collections.ObjectModel.Collection<Message> messages;
 
-        static long? confId;
+        static long confId = 2000000002;
 
-        static long? adminId;
+        static long adminId = 386787504;
 
-        static string token;
+        static string token = "21cd2cdc7610c2b80b481aa56ed60dd9c815cab2f1232dea703abf91a8d81294a257dec745c37f0106fd9";
 
-        static void Message(string message, long? id)
+        static void Message(string message, long chatId)
         {
             try
             {
                 api.Messages.Send(new MessagesSendParams
                 {
                     RandomId = rnd.Next(0, 1000000000),
-                    PeerId = id,
+                    PeerId = chatId,
                     Message = message,
+                });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+
+        static void Reply(string message, long chatId, long replyingMessageId)
+        {
+            try
+            {
+                api.Messages.Send(new MessagesSendParams
+                {
+                    RandomId = rnd.Next(0, 1000000000),
+                    PeerId = chatId,
+                    Message = message,
+                    ReplyTo = replyingMessageId
                 });
             }
             catch (Exception e)
@@ -45,38 +63,53 @@ namespace VK_BOT_INSPECTOR
 
         static void Main(string[] args)
         {
-            Console.Write("ID Беседы: "); confId = Convert.ToInt64(Console.ReadLine());
-            Console.Write("ID Вашей страницы: "); adminId = Convert.ToInt64(Console.ReadLine());
-            Console.Write("Токен: "); token = Console.ReadLine();
+            // Console.Write("ID Беседы: "); confId = Convert.ToInt64(Console.ReadLine());
+            // Console.Write("ID Вашей страницы: "); adminId = Convert.ToInt64(Console.ReadLine());
+            // Console.Write("Токен: "); token = Console.ReadLine();
 
             api.Authorize(new ApiAuthParams
             {
                 AccessToken = token
             });
-            ;
+
+            Console.WriteLine("Authorized");
+
+            HashSet<long> visitedIds = new();
+
             int reload = 0;
             while (true)
             {
-                MessageGetHistoryObject history = api.Messages.GetHistory(new MessagesGetHistoryParams
+                var history = api.Messages.GetHistory(new MessagesGetHistoryParams
                 {
                     UserId = confId,
                     Count = 20
                 });
                 messages = history.Messages.ToCollection();
-                int mCount = messages.Count;
-                for (int i = 0; i < mCount; i++)
-                {
-                    if (messages[i].FromId != adminId)
-                    {
-                        string message = messages[i].Text.ToLower();
-                        message = message.Replace(" ", String.Empty).Replace(".", String.Empty).Replace("\\n", String.Empty).Replace("\n", String.Empty).Replace("#", String.Empty).Replace("'", String.Empty);
 
-                        if(message.Contains("Test"))
+                Console.WriteLine($"Loaded {messages.Count} messages");
+
+                foreach (var message in messages)
+                {
+                    if (message.Id is not null)
+                    {
+                        if (!visitedIds.Add(message.Id.Value))
                         {
-                            Message("OK",confId);
+                            continue;
                         }
                     }
+
+                    Console.WriteLine(message.Text);
+                    // if (message.FromId == adminId) continue;
+
+                    string messageString = message.Text;
+                    messageString = messageString.Replace(" ", String.Empty).Replace(".", String.Empty).Replace("\\n", String.Empty).Replace("\n", String.Empty).Replace("#", String.Empty).Replace("'", String.Empty);
+
+                    if (messageString.Contains("Test"))
+                    {
+                        Reply("OK", confId, message.Id!.Value);
+                    }
                 }
+
                 Thread.Sleep(10000);
             }
         }
