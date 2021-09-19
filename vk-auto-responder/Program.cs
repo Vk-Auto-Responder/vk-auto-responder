@@ -104,7 +104,7 @@ namespace VkAutoResponder
 
             Console.WriteLine("Loaded VisitedIds");
 
-            while (true)
+            while (Console.ReadKey(true).Key != ConsoleKey.Q)
             {
                 var history = API.Messages.GetHistory(new MessagesGetHistoryParams
                 {
