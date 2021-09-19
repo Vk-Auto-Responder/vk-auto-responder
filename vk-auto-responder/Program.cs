@@ -25,6 +25,8 @@ namespace VkAutoResponder
 
         private static readonly HashSet<long> VisitedIds = new();
         private const string VisitedIdsFileName = "visitedids.txt";
+        
+        private static readonly string[] Keywords = {"печать", "распечатать", "скан", "печатает", };
 
         private static void Message(string message, long chatId)
         {
@@ -110,32 +112,38 @@ namespace VkAutoResponder
                     Count = 20
                 });
 
-                var messages = history.Messages;
+                var messages = history.Messages.ToCollection();
 
-                Console.WriteLine($"Loaded {history.TotalCount} messages");
+                Console.WriteLine($"Loaded {messages.Count} messages");
 
                 foreach (var message in messages)
                 {
                     if (message.Id is null) continue;
-                    
+
                     if (!NoticeMessageId(message.Id.Value))
                     {
                         continue;
                     }
 
                     Console.WriteLine(message.Text);
-                    // if (message.FromId == UserId) continue;
+                    if (message.FromId == UserId) continue;
 
-                    string messageString = message.Text;
-                    messageString = messageString.Replace(" ", String.Empty).Replace(".", String.Empty).Replace("\\n", String.Empty).Replace("\n", String.Empty).Replace("#", String.Empty).Replace("'", String.Empty);
+                    var words = message.Text
+                        .Replace(".", " ")
+                        .Replace("\\n", " ")
+                        .Replace("\n", " ")
+                        .Replace("#", " ")
+                        .Replace("'", " ")
+                        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(w => w.ToLower());
 
-                    if (messageString.Contains("Egop"))
+                    if (words.Any(word => Keywords.Any(kw => kw == word)))
                     {
-                        Reply("Красавчик", ChatId, message.Id.Value);
+                        Reply("702БЛ\nПечать (чб и цветная) - 4р/лист\nСкан - 2р/лист", ChatId, message.Id.Value);
                     }
                 }
 
-                Thread.Sleep(10000);
+                Thread.Sleep(4000);
             }
         }
     }
