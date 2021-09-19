@@ -134,7 +134,7 @@ namespace VkAutoResponder
                             continue;
                         }
 
-                        Console.WriteLine(message.Text);
+                        Console.WriteLine($"New Message {message.Id} - {message.Text}");
                         if (message.FromId == UserId) continue;
 
                         var words = message.Text
@@ -143,6 +143,10 @@ namespace VkAutoResponder
                             .Replace("\n", " ")
                             .Replace("#", " ")
                             .Replace("'", " ")
+                            .Replace("(", " ")
+                            .Replace(")", " ")
+                            .Replace("/", " ")
+                            .Replace("-", " ")
                             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
                             .Select(w => w.ToLower());
 
