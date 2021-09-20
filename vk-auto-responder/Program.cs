@@ -19,10 +19,10 @@ namespace VkAutoResponder
 
         private static readonly long[] ChatIds =
         {
-            // 2000000000 + 2, // Family 
+            // 2000000000 + 2, // Family
+            2000000000 + 58, // 702БЛ
             2000000000 + 59, // семёрка
             2000000000 + 81, // комплекс общежитий №3
-            2000000000 + 58, // 702БЛ
         };
 
         private const long UserId = 386787504;
@@ -205,6 +205,7 @@ namespace VkAutoResponder
                             Console.WriteLine($"Banned keyword detected - {BannedToAllKeywords[index]}");
                             // Reply("@all", chatId, message.Id.Value);
                         }
+
                         if (words.Any(word => (index = Array.IndexOf(Keywords, word)) != -1))
                         {
                             Console.WriteLine($"Keyword detected - {Keywords[index]}");
