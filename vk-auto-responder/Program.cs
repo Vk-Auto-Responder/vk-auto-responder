@@ -20,12 +20,10 @@ namespace VkAutoResponder
         private static readonly long[] ChatIds =
         {
             // 2000000000 + 2, // Family 
-            // 2000000000 + 59, // семёрка
-            // 2000000000 + 81, // комплекс общежитий №3
+            2000000000 + 59, // семёрка
+            2000000000 + 81, // комплекс общежитий №3
             2000000000 + 58, // 702БЛ
         };
-
-        private const long ChatId = 2000000002;
 
         private const long UserId = 386787504;
 
@@ -53,6 +51,7 @@ namespace VkAutoResponder
             "отсканить",
             "печатает",
             "печатаете",
+            "печатать",
             "печать",
             "пидор",
             "принтер",
@@ -151,7 +150,7 @@ namespace VkAutoResponder
 
                     var messages = history.Messages.ToCollection();
 
-                    Console.WriteLine($"Loaded {messages.Count} messages in {chatId} chat");
+                    // Console.WriteLine($"Loaded {messages.Count} messages in {chatId} chat");
 
                     foreach (var message in messages)
                     {
@@ -165,6 +164,12 @@ namespace VkAutoResponder
                         if (message.FromId == UserId)
                         {
                             Console.WriteLine($"Message from self, skipping! - {message.Text}");
+                            continue;
+                        }
+
+                        if (message.Date is { } date && date < DateTime.Now.AddMinutes(-20))
+                        {
+                            Console.WriteLine("Detected message over 20 minutes old");
                             continue;
                         }
 
@@ -203,7 +208,7 @@ namespace VkAutoResponder
                         if (words.Any(word => (index = Array.IndexOf(Keywords, word)) != -1))
                         {
                             Console.WriteLine($"Keyword detected - {Keywords[index]}");
-                            Reply("702БЛ\nПечать (чб и цветная) - 4р/лист\nСкан - 2р/лист", chatId, message.Id.Value);
+                            Reply("🔥702БЛ🔥\n✨Печать (чб и цветная) - 4р/лист✨\n✨Скан - 2р/лист✨", chatId, message.Id.Value);
                         }
                     }
 
