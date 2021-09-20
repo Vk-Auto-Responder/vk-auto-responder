@@ -27,7 +27,11 @@ namespace VkAutoResponder
 
         private const long UserId = 386787504;
 
-        private const string Token = "21cd2cdc7610c2b80b481aa56ed60dd9c815cab2f1232dea703abf91a8d81294a257dec745c37f0106fd9";
+        // USE: https://vkhost.github.io/
+        // Allow only messages
+        // App ID: 6121396
+
+        private const string Token = "720edbeae2719b295fc17e615287fdc033423a4ce5465be9c72d8539f935d75dea3d4cf0d4f9e15032850";
 
         private static readonly HashSet<long> VisitedIds = new();
         private const string VisitedIdsFileName = "visitedids.txt";
@@ -145,7 +149,8 @@ namespace VkAutoResponder
                     var history = API.Messages.GetHistory(new MessagesGetHistoryParams
                     {
                         UserId = chatId,
-                        Count = 5
+                        Count = 5,
+                        Extended = true
                     });
 
                     var messages = history.Messages.ToCollection();
@@ -185,8 +190,24 @@ namespace VkAutoResponder
                             Console.WriteLine($"New Forwarded Message In {message.Id} - {text}");
                         }
 
-                        var words = text
+                        var words = string.Create(text.Length, text, (span, s) =>
+                            {
+                                for (var i = 0; i < s.Length; i++)
+                                {
+                                    if (char.IsLetter(s[i]))
+                                    {
+                                        span[i] = s[i];
+                                    }
+                                    else
+                                    {
+                                        span[i] = ' ';
+                                    }
+                                }
+                            })
                             .Replace(".", " ")
+                            .Replace("?", " ")
+                            .Replace("!", " ")
+                            .Replace(",", " ")
                             .Replace("\\n", " ")
                             .Replace("\n", " ")
                             .Replace("#", " ")
