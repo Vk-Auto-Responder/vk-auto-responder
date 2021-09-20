@@ -174,7 +174,7 @@ namespace VkAutoResponder
                             {
                                 for (var i = 0; i < s.Length; i++)
                                 {
-                                    if (char.IsLetter(s[i]))
+                                    if (char.IsLetterOrDigit(s[i]))
                                     {
                                         span[i] = s[i];
                                     }
