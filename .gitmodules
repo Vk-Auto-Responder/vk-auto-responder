@@ -1,3 +1,6 @@
 [submodule "vk"]
 	path = vk
 	url = https://github.com/Vk-Auto-Responder/vk.git
+[submodule "secret"]
+	path = secret
+	url = https://github.com/Vk-Auto-Responder/secret.git

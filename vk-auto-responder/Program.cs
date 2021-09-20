@@ -13,58 +13,15 @@ namespace VkAutoResponder
 {
     public static class Program
     {
+        private const string SettingsFilePath = "secret/settings.json";
+
         private static readonly VkApi API = new();
 
         private static readonly Random Random = new();
 
-        private static readonly long[] ChatIds =
-        {
-            // 2000000000 + 2, // Family
-            2000000000 + 58, // 702БЛ
-            2000000000 + 59, // семёрка
-            2000000000 + 81, // комплекс общежитий №3
-        };
-
-        private const long UserId = 386787504;
-
-        // USE: https://vkhost.github.io/
-        // Allow only messages
-        // App ID: 6121396
-
-        private const string Token = "720edbeae2719b295fc17e615287fdc033423a4ce5465be9c72d8539f935d75dea3d4cf0d4f9e15032850";
-
         private static readonly HashSet<long> VisitedIds = new();
+        
         private const string VisitedIdsFileName = "visitedids.txt";
-
-        private static readonly string[] BannedToAllKeywords =
-        {
-            "1108",
-            "1108м"
-        };
-
-        private static readonly string[] Keywords =
-        {
-            "1108",
-            "1108м",
-            "копию",
-            "копия",
-            "напечатать",
-            "откопировать",
-            "отксерит",
-            "отксерить",
-            "отсканить",
-            "печатает",
-            "печатаете",
-            "печатать",
-            "печать",
-            "пидор",
-            "принтер",
-            "распечатать",
-            "секс",
-            "скан",
-            "сканер",
-            "скопировать",
-        };
 
         private static void Message(string message, long chatId)
         {
@@ -111,7 +68,7 @@ namespace VkAutoResponder
 
             var visitedJson = File.ReadAllText(VisitedIdsFileName);
             var visitedIds = JsonConvert.DeserializeObject<ICollection<long>>(visitedJson);
-            foreach (var visitedId in visitedIds)
+            foreach (var visitedId in visitedIds!)
             {
                 VisitedIds.Add(visitedId);
             }
@@ -127,14 +84,37 @@ namespace VkAutoResponder
 
         private static void Main(string[] args)
         {
-            // Console.Write("ID Беседы: "); chatId = Convert.ToInt64(Console.ReadLine());
-            // Console.Write("ID Вашей страницы: "); UserId = Convert.ToInt64(Console.ReadLine());
-            // Console.Write("Токен: "); token = Console.ReadLine();
+            if (!File.Exists(SettingsFilePath))
+            {
+                Console.WriteLine($"File '{SettingsFilePath}' was not found, please ensure it exists");
+                Console.ReadKey();
+                return;
+            }
+            
+            var settingsJson = File.ReadAllText(SettingsFilePath);
+
+            var settings = JsonConvert.DeserializeObject<Settings>(settingsJson);
+
+            Console.WriteLine($"Parsed settings:\n{settings}");
+
+            if (settings == null)
+            {
+                return;
+            }
 
             API.Authorize(new ApiAuthParams
             {
-                AccessToken = Token
+                ApplicationId = settings.AuthParams.AppId,
+                Login = settings.AuthParams.Login,
+                Password = settings.AuthParams.Password,
+                TwoFactorAuthorization = () =>
+                {
+                    Console.Write("Enter confirmation code: ");
+                    return Console.ReadLine();
+                }
             });
+
+            var userId = API.UserId!.Value;
 
             Console.WriteLine("Authorized");
 
@@ -144,7 +124,7 @@ namespace VkAutoResponder
 
             do
             {
-                foreach (var chatId in ChatIds)
+                foreach (var chatId in settings.ChatIds)
                 {
                     var history = API.Messages.GetHistory(new MessagesGetHistoryParams
                     {
@@ -166,7 +146,7 @@ namespace VkAutoResponder
                             continue;
                         }
 
-                        if (message.FromId == UserId)
+                        if (message.FromId == userId)
                         {
                             Console.WriteLine($"Message from self, skipping! - {message.Text}");
                             continue;
@@ -204,33 +184,21 @@ namespace VkAutoResponder
                                     }
                                 }
                             })
-                            .Replace(".", " ")
-                            .Replace("?", " ")
-                            .Replace("!", " ")
-                            .Replace(",", " ")
-                            .Replace("\\n", " ")
-                            .Replace("\n", " ")
-                            .Replace("#", " ")
-                            .Replace("'", " ")
-                            .Replace("(", " ")
-                            .Replace(")", " ")
-                            .Replace("/", " ")
-                            .Replace("-", " ")
                             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
                             .Select(w => w.ToLower())
                             .ToCollection();
 
                         var index = -1;
-                        if (words.Any(word => (index = Array.IndexOf(BannedToAllKeywords, word)) != -1))
+                        if (words.Any(word => (index = settings.BannedToAllKeywords.IndexOf(word)) != -1))
                         {
-                            Console.WriteLine($"Banned keyword detected - {BannedToAllKeywords[index]}");
+                            Console.WriteLine($"Banned keyword detected - {settings.BannedToAllKeywords[index]}");
                             // Reply("@all", chatId, message.Id.Value);
                         }
 
-                        if (words.Any(word => (index = Array.IndexOf(Keywords, word)) != -1))
+                        if (words.Any(word => (index = settings.Keywords.IndexOf(word)) != -1))
                         {
-                            Console.WriteLine($"Keyword detected - {Keywords[index]}");
-                            Reply("🔥702БЛ🔥\n✨Печать (чб и цветная) - 4р/лист✨\n✨Скан - 2р/лист✨", chatId, message.Id.Value);
+                            Console.WriteLine($"Keyword detected - {settings.Keywords[index]}");
+                            Reply(settings.Reply, chatId, message.Id.Value);
                         }
                     }
 
