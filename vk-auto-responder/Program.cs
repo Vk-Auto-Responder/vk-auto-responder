@@ -20,7 +20,7 @@ namespace VkAutoResponder
         private static readonly Random Random = new();
 
         private static readonly HashSet<long> VisitedIds = new();
-        
+
         private const string VisitedIdsFileName = "visitedids.txt";
 
         private static void Message(string message, long chatId)
@@ -90,7 +90,7 @@ namespace VkAutoResponder
                 Console.ReadKey();
                 return;
             }
-            
+
             var settingsJson = File.ReadAllText(SettingsFilePath);
 
             var settings = JsonConvert.DeserializeObject<Settings>(settingsJson);
@@ -111,7 +111,8 @@ namespace VkAutoResponder
                 {
                     Console.Write("Enter confirmation code: ");
                     return Console.ReadLine();
-                }
+                },
+                Settings = VkNet.Enums.Filters.Settings.Messages
             });
 
             var userId = API.UserId!.Value;
@@ -129,8 +130,7 @@ namespace VkAutoResponder
                     var history = API.Messages.GetHistory(new MessagesGetHistoryParams
                     {
                         UserId = chatId,
-                        Count = 5,
-                        Extended = true
+                        Count = 5
                     });
 
                     var messages = history.Messages.ToCollection();
@@ -170,20 +170,8 @@ namespace VkAutoResponder
                             Console.WriteLine($"New Forwarded Message In {message.Id} - {text}");
                         }
 
-                        var words = string.Create(text.Length, text, (span, s) =>
-                            {
-                                for (var i = 0; i < s.Length; i++)
-                                {
-                                    if (char.IsLetterOrDigit(s[i]))
-                                    {
-                                        span[i] = s[i];
-                                    }
-                                    else
-                                    {
-                                        span[i] = ' ';
-                                    }
-                                }
-                            })
+                        var words = text
+                            .ReplaceWithPredicate(' ', c => !char.IsLetterOrDigit(c))
                             .Split(' ', StringSplitOptions.RemoveEmptyEntries)
                             .Select(w => w.ToLower())
                             .ToCollection();
